@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { weekWorkouts } from '@/lib/workouts';
 import { DayWorkout } from '@/lib/types';
 import DayCard from '@/components/DayCard';
+import TodayHero from '@/components/TodayHero';
 import WorkoutModal from '@/components/WorkoutModal';
 
 const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -15,52 +16,43 @@ function getTodayDayName(): string {
 export default function Home() {
   const [selected, setSelected] = useState<DayWorkout | null>(null);
   const today = getTodayDayName();
-
-  const strengthDays = weekWorkouts.filter((w) => w.type === 'strength').length;
-  const hiitDays = weekWorkouts.filter((w) => w.type === 'hiit').length;
+  const todayWorkout = weekWorkouts.find((w) => w.day === today) ?? weekWorkouts[0];
+  const otherDays = DAYS_ORDER.filter((d) => d !== today);
 
   return (
     <main className="min-h-screen bg-[#111] text-white">
-      <div className="max-w-2xl mx-auto px-4 py-10">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Burn Club 🔥</h1>
-          <p className="text-neutral-400 text-sm mt-1">
+      <div className="max-w-2xl mx-auto px-4 pt-10 pb-16">
+
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">Burn Club</h1>
+          <p className="text-neutral-500 text-sm mt-1">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
-
-          <div className="flex gap-4 mt-4">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-blue-400" />
-              <span className="text-xs text-neutral-400">{strengthDays} S&C</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-orange-400" />
-              <span className="text-xs text-neutral-400">{hiitDays} HIIT</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-400" />
-              <span className="text-xs text-neutral-400">2 Zone 2 rides</span>
-            </div>
-          </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {DAYS_ORDER.map((dayName) => {
+        {/* Today hero */}
+        <TodayHero
+          workout={todayWorkout}
+          onOpen={() => setSelected(todayWorkout)}
+        />
+
+        {/* Rest of week */}
+        <p className="text-xs font-bold tracking-widest text-neutral-500 mb-3">THIS WEEK</p>
+        <div className="grid grid-cols-3 gap-2.5">
+          {otherDays.map((dayName) => {
             const workout = weekWorkouts.find((w) => w.day === dayName)!;
             return (
               <DayCard
                 key={dayName}
                 workout={workout}
-                isToday={dayName === today}
+                isToday={false}
                 onClick={() => setSelected(workout)}
               />
             );
           })}
         </div>
 
-        <p className="text-center text-xs text-neutral-600 mt-8">
-          Tap any training day to see the full workout
-        </p>
       </div>
 
       {selected && (
