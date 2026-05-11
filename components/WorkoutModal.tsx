@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DayWorkout, Block, Exercise } from '@/lib/types';
 
 interface WorkoutModalProps {
@@ -21,7 +21,46 @@ const blockTypeLabel = {
   finisher: 'FINISHER',
 };
 
-function ExerciseRow({ exercise, isWarmup }: { exercise: Exercise; isWarmup?: boolean }) {
+function useWorkoutCompletion(day: string) {
+  const today = new Date().toISOString().slice(0, 10);
+  const storageKey = `burn-club-${today}-${day}`;
+
+  const [completed, setCompleted] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const stored = localStorage.getItem(storageKey);
+      return stored ? new Set(JSON.parse(stored) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  const toggle = useCallback((key: string) => {
+    setCompleted(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify([...next]));
+      } catch {}
+      return next;
+    });
+  }, [storageKey]);
+
+  return { completed, toggle };
+}
+
+function ExerciseRow({
+  exercise,
+  isWarmup,
+  isCompleted,
+  onToggle,
+}: {
+  exercise: Exercise;
+  isWarmup?: boolean;
+  isCompleted: boolean;
+  onToggle: () => void;
+}) {
   const [open, setOpen] = useState(false);
 
   const searchQuery = encodeURIComponent(`${exercise.name} how to proper form`);
@@ -34,30 +73,54 @@ function ExerciseRow({ exercise, isWarmup }: { exercise: Exercise; isWarmup?: bo
 
   return (
     <div className="border-b border-white/5 last:border-0 pb-2 last:pb-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-4 pt-2 group text-left"
-      >
-        <div className="flex items-center gap-2">
-          <span className={`text-xs transition-colors ${open ? 'text-yellow-400' : 'text-neutral-600 group-hover:text-neutral-400'}`}>
-            ▶
-          </span>
-          <span className="text-sm text-neutral-200 group-hover:text-white transition-colors">
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          onClick={onToggle}
+          className={`shrink-0 w-5 h-5 rounded-full border transition-all duration-150 flex items-center justify-center
+            ${isCompleted
+              ? 'bg-emerald-500 border-emerald-500'
+              : 'border-neutral-600 hover:border-neutral-400'
+            }`}
+        >
+          {isCompleted && (
+            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </button>
+
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex-1 flex items-center justify-between gap-4 group text-left"
+        >
+          <span className={`text-sm transition-colors ${
+            isCompleted
+              ? 'line-through text-neutral-500'
+              : 'text-neutral-200 group-hover:text-white'
+          }`}>
             {exercise.name}
           </span>
-        </div>
-        {detail && (
-          <span className="text-xs text-neutral-400 text-right shrink-0">{detail}</span>
-        )}
-      </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {detail && (
+              <span className={`text-xs text-right ${isCompleted ? 'text-neutral-600' : 'text-neutral-400'}`}>
+                {detail}
+              </span>
+            )}
+            <span className={`text-xs transition-colors ${open ? 'text-yellow-400' : 'text-neutral-600 group-hover:text-neutral-400'}`}>
+              ▶
+            </span>
+          </div>
+        </button>
+      </div>
 
-      {/* Weight info — always visible if present */}
       {(exercise.startWeight || exercise.progression) && !isWarmup && (
-        <div className="ml-4 mt-1.5 space-y-1">
+        <div className="ml-8 mt-1.5 space-y-1">
           {exercise.startWeight && (
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-neutral-500">Start</span>
-              <span className="text-xs font-medium text-emerald-400">{exercise.startWeight}</span>
+              <span className={`text-xs font-medium ${isCompleted ? 'text-neutral-600' : 'text-emerald-400'}`}>
+                {exercise.startWeight}
+              </span>
             </div>
           )}
           {exercise.progression && (
@@ -70,7 +133,7 @@ function ExerciseRow({ exercise, isWarmup }: { exercise: Exercise; isWarmup?: bo
       )}
 
       {open && (
-        <div className="mt-2 rounded-lg overflow-hidden border border-white/10 bg-black">
+        <div className="mt-2 ml-8 rounded-lg overflow-hidden border border-white/10 bg-black">
           <iframe
             src={embedUrl}
             className="w-full aspect-video"
@@ -94,7 +157,17 @@ function ExerciseRow({ exercise, isWarmup }: { exercise: Exercise; isWarmup?: bo
   );
 }
 
-function BlockCard({ block }: { block: Block }) {
+function BlockCard({
+  block,
+  blockIndex,
+  completed,
+  onToggle,
+}: {
+  block: Block;
+  blockIndex: number;
+  completed: Set<string>;
+  onToggle: (key: string) => void;
+}) {
   return (
     <div className="bg-white/5 rounded-xl p-4 border border-white/10">
       <div className="flex items-center gap-2 mb-3">
@@ -129,9 +202,17 @@ function BlockCard({ block }: { block: Block }) {
       )}
 
       <div className="space-y-1">
-        {block.exercises.map((ex, i) => (
-          <ExerciseRow key={i} exercise={ex} />
-        ))}
+        {block.exercises.map((ex, i) => {
+          const key = `block-${blockIndex}-${i}`;
+          return (
+            <ExerciseRow
+              key={i}
+              exercise={ex}
+              isCompleted={completed.has(key)}
+              onToggle={() => onToggle(key)}
+            />
+          );
+        })}
       </div>
 
       {block.notes && (
@@ -145,7 +226,12 @@ function BlockCard({ block }: { block: Block }) {
 
 export default function WorkoutModal({ workout, onClose }: WorkoutModalProps) {
   const [warmupOpen, setWarmupOpen] = useState(false);
+  const { completed, toggle } = useWorkoutCompletion(workout.day);
   const color = typeColors[workout.type];
+
+  const totalMain = workout.blocks.reduce((acc, b) => acc + b.exercises.length, 0);
+  const completedMain = [...completed].filter(k => k.startsWith('block-')).length;
+  const allDone = totalMain > 0 && completedMain === totalMain;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -165,17 +251,35 @@ export default function WorkoutModal({ workout, onClose }: WorkoutModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-[#161616] border-b border-white/10 px-5 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-neutral-500 font-bold tracking-widest">{workout.day.toUpperCase()}</p>
-            <h2 className={`text-lg font-bold ${color}`}>{workout.label}</h2>
+        <div className="sticky top-0 bg-[#161616] border-b border-white/10 px-5 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-neutral-500 font-bold tracking-widest">{workout.day.toUpperCase()}</p>
+              <h2 className={`text-lg font-bold ${color}`}>{workout.label}</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              {totalMain > 0 && (
+                <span className={`text-sm font-semibold tabular-nums ${allDone ? 'text-emerald-400' : 'text-neutral-500'}`}>
+                  {completedMain}/{totalMain}
+                </span>
+              )}
+              <button
+                onClick={onClose}
+                className="text-neutral-400 hover:text-white transition-colors text-xl leading-none p-1"
+              >
+                ✕
+              </button>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-white transition-colors text-xl leading-none p-1"
-          >
-            ✕
-          </button>
+
+          {totalMain > 0 && (
+            <div className="mt-3 h-1 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${allDone ? 'bg-emerald-400' : 'bg-white/30'}`}
+                style={{ width: `${(completedMain / totalMain) * 100}%` }}
+              />
+            </div>
+          )}
         </div>
 
         <div className="p-5 space-y-4">
@@ -195,7 +299,13 @@ export default function WorkoutModal({ workout, onClose }: WorkoutModalProps) {
             {warmupOpen && (
               <div className="px-4 pb-4 border-t border-white/10 pt-3 space-y-1">
                 {workout.warmup.map((ex, i) => (
-                  <ExerciseRow key={i} exercise={ex} isWarmup />
+                  <ExerciseRow
+                    key={i}
+                    exercise={ex}
+                    isWarmup
+                    isCompleted={completed.has(`warmup-${i}`)}
+                    onToggle={() => toggle(`warmup-${i}`)}
+                  />
                 ))}
               </div>
             )}
@@ -208,7 +318,13 @@ export default function WorkoutModal({ workout, onClose }: WorkoutModalProps) {
             </p>
             <div className="space-y-3">
               {workout.blocks.map((block, i) => (
-                <BlockCard key={i} block={block} />
+                <BlockCard
+                  key={i}
+                  block={block}
+                  blockIndex={i}
+                  completed={completed}
+                  onToggle={toggle}
+                />
               ))}
             </div>
           </div>
