@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DayWorkout, Block, Exercise } from '@/lib/types';
+import { useWorkoutCompletion } from '@/lib/useWorkoutCompletion';
 
 interface WorkoutModalProps {
   workout: DayWorkout;
@@ -20,35 +21,6 @@ const blockTypeLabel = {
   interval: 'INTERVALS',
   finisher: 'FINISHER',
 };
-
-function useWorkoutCompletion(day: string) {
-  const today = new Date().toISOString().slice(0, 10);
-  const storageKey = `burn-club-${today}-${day}`;
-
-  const [completed, setCompleted] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
-    try {
-      const stored = localStorage.getItem(storageKey);
-      return stored ? new Set(JSON.parse(stored) as string[]) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
-
-  const toggle = useCallback((key: string) => {
-    setCompleted(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      try {
-        localStorage.setItem(storageKey, JSON.stringify([...next]));
-      } catch {}
-      return next;
-    });
-  }, [storageKey]);
-
-  return { completed, toggle };
-}
 
 function ExerciseRow({
   exercise,

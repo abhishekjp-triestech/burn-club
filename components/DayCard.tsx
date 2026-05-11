@@ -1,6 +1,7 @@
 'use client';
 
 import { DayWorkout } from '@/lib/types';
+import { useWorkoutCompletion } from '@/lib/useWorkoutCompletion';
 
 interface DayCardProps {
   workout: DayWorkout;
@@ -16,6 +17,7 @@ const typeConfig = {
     bg: 'bg-blue-500/10',
     dot: 'bg-blue-400',
     todayBorder: 'border-blue-400',
+    fill: 'bg-blue-400',
   },
   hiit: {
     badge: 'HIIT',
@@ -24,6 +26,7 @@ const typeConfig = {
     bg: 'bg-orange-500/10',
     dot: 'bg-orange-400',
     todayBorder: 'border-orange-400',
+    fill: 'bg-orange-400',
   },
   cycling: {
     badge: 'RIDE',
@@ -32,12 +35,17 @@ const typeConfig = {
     bg: 'bg-green-500/10',
     dot: 'bg-green-400',
     todayBorder: 'border-green-400',
+    fill: 'bg-green-400',
   },
 };
 
 export default function DayCard({ workout, isToday, onClick }: DayCardProps) {
   const cfg = typeConfig[workout.type];
   const isCycling = workout.type === 'cycling';
+  const { completed } = useWorkoutCompletion(workout.day);
+  const totalMain = workout.blocks.reduce((acc, b) => acc + b.exercises.length, 0);
+  const completedMain = [...completed].filter(k => k.startsWith('block-')).length;
+  const allDone = totalMain > 0 && completedMain === totalMain;
 
   return (
     <button
@@ -72,6 +80,15 @@ export default function DayCard({ workout, isToday, onClick }: DayCardProps) {
         <div className={`mt-3 flex items-center gap-1.5`}>
           <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`} />
           <span className="text-xs text-neutral-400">Today</span>
+        </div>
+      )}
+
+      {totalMain > 0 && (
+        <div className="mt-3 h-0.5 bg-white/10 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${allDone ? 'bg-emerald-400' : cfg.fill}`}
+            style={{ width: `${(completedMain / totalMain) * 100}%` }}
+          />
         </div>
       )}
     </button>
