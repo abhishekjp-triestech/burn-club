@@ -27,10 +27,10 @@ export const weekWorkouts: DayWorkout[] = [
         restBetweenRounds: '90s rest',
         exercises: [
           {
-            name: 'Goblet Squat',
+            name: 'DB Goblet Squat',
             sets: 4,
             reps: '10 reps',
-            startWeight: '8kg KB',
+            startWeight: '8kg DB',
             progression: '+2kg once all 4×10 are clean for 2 sessions',
           },
           {
@@ -71,11 +71,11 @@ export const weekWorkouts: DayWorkout[] = [
         restBetweenRounds: '60s rest',
         exercises: [
           {
-            name: 'KB Deadlift',
+            name: 'DB Deadlift',
             sets: 3,
             reps: '10 reps',
-            startWeight: '10kg KB',
-            progression: '+2kg once all 3×10 are clean for 2 sessions',
+            startWeight: '10kg DB each hand',
+            progression: '+2kg per DB once all 3×10 are clean for 2 sessions',
           },
           {
             name: 'Glute Bridge Hold',
@@ -127,9 +127,9 @@ export const weekWorkouts: DayWorkout[] = [
             progression: 'Master bodyweight → hold 6kg DBs in each hand',
           },
           {
-            name: 'KB swing (light — focus on hip hinge)',
-            startWeight: '8kg KB',
-            progression: '+2kg once hip hinge pattern feels automatic',
+            name: 'Cable Pull-Through (light — focus on hip hinge)',
+            startWeight: '10kg cable stack',
+            progression: '+5kg once hip hinge pattern feels automatic',
           },
           {
             name: 'Push-up',
@@ -156,9 +156,9 @@ export const weekWorkouts: DayWorkout[] = [
             progression: 'Track your 300m time — beat it by 1–2s every 2 weeks',
           },
           {
-            name: 'Goblet squat',
+            name: 'DB Goblet Squat',
             reps: '12 reps',
-            startWeight: '8kg KB',
+            startWeight: '8kg DB',
             progression: '+2kg when 3×12 feels easy',
           },
           {
@@ -302,10 +302,10 @@ export const weekWorkouts: DayWorkout[] = [
             progression: '+2kg once all 3×10 each side feel controlled',
           },
           {
-            name: 'KB swing',
+            name: 'Cable Pull-Through',
             reps: '12 reps',
-            startWeight: '8kg KB',
-            progression: '+2kg once hip hinge is automatic and all 12 are powerful',
+            startWeight: '10kg cable stack',
+            progression: '+5kg once hip hinge is automatic and all 12 are powerful',
           },
           {
             name: 'Glute Bridge Hold',
